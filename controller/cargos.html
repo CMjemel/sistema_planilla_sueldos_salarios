@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Cargos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #222;
+    }
+    h2 {
+      color: #007acc;
+    }
+    form input, form button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    ul {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Gestión de Cargos</h2>
+  <form id="form-cargo">
+    <label for="nombre-cargo">Nombre del Cargo:</label>
+    <input type="text" id="nombre-cargo" required>
+
+    <label for="area-cargo">Área:</label>
+    <input type="text" id="area-cargo" required>
+
+    <label for="salario-cargo">Salario Base:</label>
+    <input type="number" id="salario-cargo" required>
+
+    <button type="submit">Guardar Cargo</button>
+  </form>
+
+  <div>
+    <h3>Cargos Registrados:</h3>
+    <ul id="cargos-ul"></ul>
+  </div>
+
+  <script>
+    const cargos = [];
+
+    document.getElementById('form-cargo').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-cargo').value;
+      const area = document.getElementById('area-cargo').value;
+      const salario = parseFloat(document.getElementById('salario-cargo').value);
+
+      cargos.push({ nombre, area, salario });
+      actualizarListaCargos();
+      this.reset();
+    });
+
+    function actualizarListaCargos() {
+      const lista = document.getElementById('cargos-ul');
+      lista.innerHTML = '';
+      cargos.forEach((cargo, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${cargo.nombre} - Área: ${cargo.area} - Bs ${cargo.salario.toFixed(2)}`;
+        lista.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sistema de Planilla - Boletas de Pago</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #2980b9;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-right: 15px;
+    }
+    button:hover {
+      background-color: #1f618d;
+    }
+
+    /* Modal overlay */
+    #modal-boletas {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    /* Modal content */
+    #modal-boletas-content {
+      background: white;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 450px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 25px 30px 30px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    #modal-boletas-close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #999;
+      cursor: pointer;
+      user-select: none;
+    }
+    #modal-boletas-close:hover {
+      color: #e74c3c;
+    }
+    select, button#btn-descargar {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #detalle-boleta {
+      background: #fff;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .label {
+      font-weight: bold;
+      color: #333;
+    }
+    .valor {
+      float: right;
+      font-weight: normal;
+    }
+    .fila {
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Sistema de Gestión de Planillas</h1>
+
+  <button id="btn-abrir-boletas">Abrir Boletas de Pago</button>
+
+  <!-- Modal Boletas -->
+  <div id="modal-boletas">
+    <div id="modal-boletas-content">
+      <span id="modal-boletas-close">&times;</span>
+      <h2>Boletas de Pago</h2>
+
+      <label for="select-empleado">Seleccione un empleado:</label><br />
+      <select id="select-empleado">
+        <option value="" disabled selected>-- Elige un empleado --</option>
+      </select>
+
+      <div id="detalle-boleta" style="display:none;"></div>
+
+      <button id="btn-descargar" style="display:none;">Descargar Boleta PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Datos ejemplo empleados
+    const empleados = [
+      { id: 1, nombre: "Juan Pérez", sueldoBasico: 3500, bonos: 500, descuentos: 300 },
+      { id: 2, nombre: "María Gómez", sueldoBasico: 4200, bonos: 600, descuentos: 400 },
+      { id: 3, nombre: "Luis Torres", sueldoBasico: 2800, bonos: 350, descuentos: 200 }
+    ];
+
+    const btnAbrirBoletas = document.getElementById('btn-abrir-boletas');
+    const modalBoletas = document.getElementById('modal-boletas');
+    const btnCerrarBoletas = document.getElementById('modal-boletas-close');
+
+    const selectEmpleado = document.getElementById('select-empleado');
+    const detalleBoleta = document.getElementById('detalle-boleta');
+    const btnDescargar = document.getElementById('btn-descargar');
+
+    // Llenar select empleados
+    empleados.forEach(emp => {
+      const option = document.createElement('option');
+      option.value = emp.id;
+      option.textContent = emp.nombre;
+      selectEmpleado.appendChild(option);
+    });
+
+    // Mostrar boleta al seleccionar empleado
+    function mostrarBoleta() {
+      const id = parseInt(selectEmpleado.value);
+      const empleado = empleados.find(e => e.id === id);
+      if (!empleado) {
+        detalleBoleta.style.display = 'none';
+        btnDescargar.style.display = 'none';
+        return;
+      }
+
+      const sueldoNeto = empleado.sueldoBasico + empleado.bonos - empleado.descuentos;
+
+      detalleBoleta.innerHTML = `
+        <div class="fila"><span class="label">Empleado:</span> <span class="valor">${empleado.nombre}</span></div>
+        <div class="fila"><span class="label">Sueldo Básico:</span> <span class="valor">Bs. ${empleado.sueldoBasico.toFixed(2)}</span></div>
+        <div class="fila"><span class="label">Bonos:</span> <span class="valor">Bs. ${empleado.bonos.toFixed(2)}</span></div>
+        <div class="fila"><span class="label">Descuentos:</span> <span class="valor">Bs. ${empleado.descuentos.toFixed(2)}</span></div>
+        <hr />
+        <div class="fila" style="font-weight:bold; font-size:1.2em;">
+          <span class="label">Sueldo Neto:</span> <span class="valor">Bs. ${sueldoNeto.toFixed(2)}</span>
+        </div>
+      `;
+      detalleBoleta.style.display = 'block';
+      btnDescargar.style.display = 'inline-block';
+    }
+
+    selectEmpleado.addEventListener('change', mostrarBoleta);
+
+    btnDescargar.addEventListener('click', () => {
+      const id = parseInt(selectEmpleado.value);
+      const empleado = empleados.find(e => e.id === id);
+      if (!empleado) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const sueldoNeto = empleado.sueldoBasico + empleado.bonos - empleado.descuentos;
+
+      doc.setFontSize(18);
+      doc.text('Boleta de Pago', 105, 20, null, null, 'center');
+
+      doc.setFontSize(12);
+      doc.text(`Empleado: ${empleado.nombre}`, 20, 40);
+      doc.text(`Sueldo Básico: Bs. ${empleado.sueldoBasico.toFixed(2)}`, 20, 50);
+      doc.text(`Bonos: Bs. ${empleado.bonos.toFixed(2)}`, 20, 60);
+      doc.text(`Descuentos: Bs. ${empleado.descuentos.toFixed(2)}`, 20, 70);
+
+      doc.setLineWidth(0.5);
+      doc.line(20, 75, 190, 75);
+
+      doc.setFontSize(14);
+      doc.text(`Sueldo Neto: Bs. ${sueldoNeto.toFixed(2)}`, 20, 90);
+
+      doc.save(`Boleta_${empleado.nombre.replace(' ', '_')}.pdf`);
+    });
+
+    // Abrir modal
+    btnAbrirBoletas.addEventListener('click', () => {
+      modalBoletas.style.display = 'flex';
+      // Reiniciar selección y vista
+      selectEmpleado.value = "";
+      detalleBoleta.style.display = 'none';
+      btnDescargar.style.display = 'none';
+    });
+
+    // Cerrar modal
+    btnCerrarBoletas.addEventListener('click', () => {
+      modalBoletas.style.display = 'none';
+    });
+
+    // Cerrar modal haciendo click fuera del contenido
+    modalBoletas.addEventListener('click', e => {
+      if (e.target === modalBoletas) {
+        modalBoletas.style.display = 'none';
+      }
+    });
+  </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Cargos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #222;
+    }
+    h2 {
+      color: #007acc;
+    }
+    form input, form button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    ul {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Gestión de Cargos</h2>
+  <form id="form-cargo">
+    <label for="nombre-cargo">Nombre del Cargo:</label>
+    <input type="text" id="nombre-cargo" required>
+
+    <label for="area-cargo">Área:</label>
+    <input type="text" id="area-cargo" required>
+
+    <label for="salario-cargo">Salario Base:</label>
+    <input type="number" id="salario-cargo" required>
+
+    <button type="submit">Guardar Cargo</button>
+  </form>
+
+  <div>
+    <h3>Cargos Registrados:</h3>
+    <ul id="cargos-ul"></ul>
+  </div>
+
+  <script>
+    const cargos = [];
+
+    document.getElementById('form-cargo').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre-cargo').value;
+      const area = document.getElementById('area-cargo').value;
+      const salario = parseFloat(document.getElementById('salario-cargo').value);
+
+      cargos.push({ nombre, area, salario });
+      actualizarListaCargos();
+      this.reset();
+    });
+
+    function actualizarListaCargos() {
+      const lista = document.getElementById('cargos-ul');
+      lista.innerHTML = '';
+      cargos.forEach((cargo, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${cargo.nombre} - Área: ${cargo.area} - Bs ${cargo.salario.toFixed(2)}`;
+        lista.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
+
+

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sistema de Planilla de Sueldos y Salarios</title>
+<style>
+  /* Reseteo */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: Arial, sans-serif; overflow-x: hidden; transition: background-color 0.5s, color 0.5s; }
+  body { background-color: #121212; color: white; }
+  body.light-mode { background-color: #f0f8ff; color: #222; }
+
+  /* Fondo partículas */
+  #atom-background {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; background-color: transparent;
+  }
+
+  /* Navbar */
+  .navbar {
+    background-color: rgba(240,240,240,0.9); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #ccc; transition: background-color 0.5s;
+  }
+  body.dark-mode .navbar { background-color: rgba(31,31,31,0.9); border-bottom-color: #444; }
+  body.light-mode .navbar { background-color: rgba(240,240,240,0.9); border-bottom-color: #ccc; }
+
+  .menu-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .navbar a { text-decoration: none; color: inherit; font-weight: bold; padding: 8px 12px; border-radius: 8px; transition: background-color 0.3s, color 0.3s; }
+  .navbar a:hover { background-color: rgba(0,122,204,0.1); color: #007acc; }
+
+  /* Botón modo claro/oscuro */
+  #theme-toggle {
+    padding: 8px 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; background-color: #007acc; color: white; transition: background-color 0.3s;
+  }
+  #theme-toggle:hover { background-color: #005f99; }
+  body.light-mode #theme-toggle { background-color: #333; color: #eee; }
+  body.light-mode #theme-toggle:hover { background-color: #555; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex; justify-content: center; background-color: rgba(232,232,232,0.9); padding: 15px; gap: 40px; border-bottom: 2px solid #ccc; flex-wrap: wrap; transition: background-color 0.5s;
+  }
+  body.dark-mode .toolbar { background-color: rgba(34,34,34,0.9); border-bottom-color: #444; }
+
+  .tool { text-align: center; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 12px; padding: 8px;
+    background-color: rgba(255,255,255,0.1);
+  }
+  body.dark-mode .tool { background-color: rgba(255,255,255,0.08); }
+  body.light-mode .tool { background-color: rgba(0,0,0,0.05); }
+
+  .tool:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 8px 15px rgba(0,122,204,0.4); background-color: rgba(0,122,204,0.15); }
+  .tool img { width: 60px; height: 60px; display: block; margin: auto; transition: transform 0.4s ease; }
+  .tool:hover img { transform: scale(1.15) rotate(5deg); }
+  .tool span { display: block; margin-top: 8px; font-weight: bold; color: inherit; transition: color 0.4s ease; }
+  .tool:hover span { color: #007acc; text-shadow: 0 0 8px #007acc; }
+
+  /* Contenido */
+  .content { padding: 40px; text-align: center; transition: color 0.5s; }
+  .content h1 { font-size: 50px; color: #007acc; transition: color 0.5s; }
+  body.dark-mode .content h1 { color: #66b2ff; }
+  .content p { font-size: 20px; color: #aaa; }
+  body.light-mode .content p { color: #555; }
+
+  /* Footer */
+  .footer {
+    position: fixed; bottom: 0; width: 100%; background-color: #0e0d41; color: white; text-align: left; padding: 10px 20px; font-weight: bold; font-size: 16px; transition: background-color 0.5s, color 0.5s; z-index: 10;
+  }
+  body.dark-mode .footer { background-color: #0d071d; color: #eee; }
+  .footer span { color: yellow; }
+  body.dark-mode .footer span { color: #ffcc00; }
+
+  /* Modal base */
+  .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s ease; justify-content: center; align-items: center;
+  }
+  .modal-content {
+    background: var(--modal-bg, #fff); color: var(--modal-color, #000); padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: slideUp 0.3s ease; position: relative; transition: all 0.3s ease;
+  }
+  .dark-mode .modal-content { --modal-bg:#222; --modal-color:#fff; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-content h2 { margin-top: 0; font-size: 24px; color: #007acc; }
+  .modal-content button { padding: 10px 20px; font-weight: bold; border: none; background-color: #007acc; color: white; border-radius: 8px; cursor: pointer; }
+  .modal-content button:hover { background-color: #005f99; }
+  .modal-content input, .modal-content select {
+    width: 100%; padding: 8px; margin-top: 6px; margin-bottom: 14px; border: 1px solid #ccc; border-radius: 6px; transition: border 0.3s;
+  }
+  .modal-content input:focus, .modal-content select:focus { border-color: #007acc; outline: none; }
+  .close { position: absolute; right: 15px; top: 10px; font-size: 24px; color: #aaa; cursor: pointer; transition: color 0.3s; }
+  .close:hover { color: red; }
+</style>
+</head>
+
+<body class="dark-mode">
+
+<!-- Fondo partículas -->
+<div id="atom-background"></div>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="menu-links">
+    <a href="#" data-open="modal-archivo">Archivo</a>
+    <a href="#" data-open="modal-empleados">Registros</a>
+    <a href="#" data-open="modal-cargos">Cargos y Áreas</a>
+    <a href="#" data-open="modal-planilla">Planilla Mensual</a>
+    <a href="#" data-open="modal-bonos-descuentos">Descuentos y Bonos</a>
+    <a href="#" data-open="modal-reporte-sueldos">Reportes</a>
+    <a href="#" data-open="modal-usuarios">Gestión Usuarios</a>
+    <a href="#" data-open="modal-sistema">Sistema</a>
+    <a href="#" data-open="modal-ayuda">Ayuda</a>
+  </div>
+  <button id="theme-toggle">Modo Claro</button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="tool" data-open="modal-empleados">
+    <img src="https://img.icons8.com/color/96/conference-call.png" alt="Empleados">
+    <span>Registro Empleados</span>
+  </div>
+
+  <div class="tool" data-open="modal-cargos">
+    <img src="https://img.icons8.com/color/96/organization.png" alt="Cargos">
+    <span>Gestión de Cargos</span>
+  </div>
+
+  <div class="tool" data-open="modal-planilla">
+    <img src="https://img.icons8.com/color/96/payroll.png" alt="Planilla">
+    <span>Generar Planilla</span>
+  </div>
+
+  <div class="tool" data-open="modal-bonos-descuentos">
+    <img src="https://img.icons8.com/color/96/money.png" alt="Bonos">
+    <span>Bonos y Descuentos</span>
+  </div>
+
+  <div class="tool" id="btnReporteAportes">
+    <img src="https://img.icons8.com/color/96/tax.png" alt="Aportes">
+    <span>Reporte Aportes</span>
+  </div>
+
+  <div class="tool" id="btnBoletasPago">
+    <img src="https://img.icons8.com/color/96/receipt-approved.png" alt="Boletas">
+    <span>Boletas de Pago</span>
+  </div>
+</div>
+
+<!-- Contenido -->
+<div class="content">
+  <h1>PlanillaSoft SRL</h1>
+  <p>Sistema de Planilla de Sueldos y Salarios</p>
+</div>
+
+<!-- Modal Registro Empleados -->
+<div id="modal-empleados" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-empleados">&times;</span>
+    <h2>Registro de Empleados</h2>
+    <form id="form-empleado" autocomplete="off">
+      <label for="nombre">Nombre Completo:</label>
+      <input type="text" id="nombre" required>
+      <label for="ci">CI:</label>
+      <input type="text" id="ci" required>
+      <label for="cargo">Cargo:</label>
+      <input type="text" id="cargo" required>
+      <label for="area">Área:</label>
+      <input type="text" id="area" required>
+      <label for="sueldo">Sueldo Básico (Bs):</label>
+      <input type="number" id="sueldo" step="0.01" min="0" required>
+      <button type="submit">Registrar</button>
+    </form>
+    <div id="lista-empleados" style="margin-top: 20px;">
+      <h3>Empleados Registrados:</h3>
+      <ul id="empleados-ul"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gestión de Cargos -->
+<div id="modal-cargos" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-cargos">&times;</span>
+    <h2>Gestión de Cargos</h2>
+    <form id="form-cargo" autocomplete="off">
+      <label for="nombreCargo">Nombre del Cargo:</label>
+      <input type="text" id="nombreCargo" required>
+      <label for="areaCargo">Área:</label>
+      <input type="text" id="areaCargo" required>
+      <button type="submit">Agregar Cargo</button>
+    </form>
+    <div style="margin-top: 20px;">
+      <h3>Cargos Registrados:</h3>
+      <ul id="lista-cargos"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Generar Planilla -->
+<div id="modal-planilla" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-planilla">&times;</span>
+    <h2>Planilla Mensual</h2>
+    <table id="tabla-planilla" border="1" cellpadding="8" style="width:100%; border-collapse: collapse; margin-top: 20px;">
+      <thead style="background-color:#007acc; color:white;">
+        <tr>
+          <th>#</th><th>Nombre</th><th>CI</th><th>Cargo</th><th>Área</th>
+          <th>Sueldo Básico (Bs)</th><th>Descuentos (Bs)</th><th>Bonos (Bs)</th><th>Sueldo Neto (Bs)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Bonos y Descuentos -->
+<div id="modal-bonos-descuentos" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-bonos-descuentos">&times;</span>
+    <h2>Gestión de Bonos y Descuentos</h2>
+    <form id="form-bono-descuento" autocomplete="off">
+      <label for="tipoBD">Tipo:</label>
+      <select id="tipoBD" required>
+        <option value="" disabled selected>Seleccione tipo</option>
+        <option value="bono">Bono</option>
+        <option value="descuento">Descuento</option>
+      </select>
+
+      <label for="empleadoBD">Empleado (CI):</label>
+      <input type="text" id="empleadoBD" placeholder="Ingrese CI del empleado" required>
+
+      <label for="montoBD">Monto (Bs):</label>
+      <input type="number" id="montoBD" min="0" step="0.01" required>
+
+      <button type="submit">Agregar</button>
+    </form>
+
+    <div style="margin-top: 20px;">
+      <h3>Bonos y Descuentos Registrados:</h3>
+      <ul id="lista-bonos-descuentos"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reporte Sueldos -->
+<div id="modal-reporte-sueldos" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-reporte-sueldos">&times;</span>
+    <h2>Reporte de Sueldos</h2>
+    <button id="btnExportarPDF" style="margin-bottom: 12px;">Descargar PDF</button>
+    <div id="contenido-reporte"></div>
+  </div>
+</div>
+
+<!-- Otros modales -->
+<div id="modal-archivo" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-archivo">&times;</span>
+    <h2>Archivo</h2>
+
+    <h3>📥 Importar Datos (JSON)</h3>
+    <input type="file" id="importarJSON" accept=".json" />
+    <br><br>
+
+    <h3>📤 Exportar Datos</h3>
+    <button id="btnExportarJSON">Exportar JSON</button>
+
+    <h3 style="margin-top:16px;">📥 Importar Excel (.xlsx)</h3>
+    <input type="file" id="importarExcel" accept=".xlsx" />
+    <br><br>
+
+    <h3>📤 Exportar a Excel</h3>
+    <button id="btnExportarExcel">Exportar Excel</button>
+  </div>
+</div>
+
+<div id="modal-usuarios" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-usuarios">&times;</span>
+    <h2>Gestión de Usuarios</h2>
+    <p>En desarrollo: próximamente podrás gestionar roles y accesos.</p>
+  </div>
+</div>
+
+<div id="modal-sistema" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-sistema">&times;</span>
+    <h2>Información del Sistema</h2>
+    <p><strong>Nombre:</strong> PlanillaSoft SRL</p>
+    <p><strong>Versión:</strong> 1.0</p>
+    <p><strong>Año:</strong> 2025</p>
+  </div>
+</div>
+
+<div id="modal-ayuda" class="modal">
+  <div class="modal-content">
+    <span class="close" data-close="modal-ayuda">&times;</span>
+    <h2>Ayuda</h2>
+    <p>Bienvenido a <strong>PlanillaSoft SRL</strong>.</p>
+    <ul>
+      <li>Usa <strong>Registros</strong> para agregar empleados.</li>
+      <li>En <strong>Cargos y Áreas</strong> puedes organizar tu empresa.</li>
+      <li>Genera planillas con sueldos netos y descuentos.</li>
+      <li>Exporta reportes en PDF desde <strong>Reportes</strong>.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  Empresa: <span>PlanillaSoft SRL</span> | Gestión: <span>2025</span>
+</div>
+
+<!-- Librerías externas -->
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ===== Estado ===== */
+  const empleados = JSON.parse(localStorage.getItem('empleados') || '[]');
+  const cargos = JSON.parse(localStorage.getItem('cargos') || '[]');
+  const bonosDescuentos = JSON.parse(localStorage.getItem('bonosDescuentos') || '[]');
+
+  /* ===== Utiles ===== */
+  const guardar = () => {
+    localStorage.setItem('empleados', JSON.stringify(empleados));
+    localStorage.setItem('cargos', JSON.stringify(cargos));
+    localStorage.setItem('bonosDescuentos', JSON.stringify(bonosDescuentos));
+  };
+
+  const money = n => (Number(n)||0).toFixed(2);
+
+  /* ===== Partículas + Tema ===== */
+  function actualizarColorParticulas(color) {
+    particlesJS("atom-background", {
+      particles:{ number:{value:80,density:{enable:true,value_area:800}}, color:{value:color}, shape:{type:"circle"},
+      opacity:{value:0.5}, size:{value:4,random:true}, line_linked:{enable:true,distance:150,color:color,opacity:0.4,width:1},
+      move:{enable:true,speed:3}},
+      interactivity:{events:{onhover:{enable:true,mode:"grab"},onclick:{enable:true,mode:"push"},resize:true},
+      modes:{grab:{distance:140,line_linked:{opacity:1}},push:{particles_nb:4}}}, retina_detect:true
+    });
+  }
+  actualizarColorParticulas("#ffffff");
+
+  const toggleBtn = document.getElementById('theme-toggle');
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    document.body.classList.toggle('dark-mode');
+    const esClaro = document.body.classList.contains('light-mode');
+    toggleBtn.textContent = esClaro ? 'Modo Oscuro' : 'Modo Claro';
+    actualizarColorParticulas(esClaro ? "#000000" : "#ffffff");
+  });
+
+  /* ===== Abrir / cerrar modales ===== */
+  document.querySelectorAll('[data-open]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = el.getAttribute('data-open');
+      const modal = document.getElementById(id);
+      if (modal) modal.style.display = 'flex';
+      if (id === 'modal-planilla') cargarPlanilla();
+      if (id === 'modal-reporte-sueldos') generarReporteSueldos();
+      if (id === 'modal-bonos-descuentos') actualizarListaBonosDescuentos();
+    });
+  });
+
+  document.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.getAttribute('data-close');
+      const modal = document.getElementById(id);
+      if (modal) modal.style.display = 'none';
+    });
+  });
+
+  // Clic fuera del contenido cierra el modal
+  window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+  });
+
+  // ESC cierra todos
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+  });
+
+  /* ===== Navegación a otras páginas ===== */
+  document.getElementById('btnReporteAportes').addEventListener('click', () => {
+    window.location.href = 'reporte_aportes.html';
+  });
+  document.getElementById('btnBoletasPago').addEventListener('click', () => {
+    window.location.href = 'boletas_pago.html';
+  });
+
+  /* ===== Empleados ===== */
+  const ulEmpleados = document.getElementById('empleados-ul');
+  function actualizarListaEmpleados() {
+    ulEmpleados.innerHTML = '';
+    empleados.forEach((emp, i) => {
+      const li = document.createElement('li');
+      li.textContent = `${i+1}. ${emp.nombre} - CI: ${emp.ci} - ${emp.cargo} - ${emp.area} - Bs ${money(emp.sueldo)}`;
+      ulEmpleados.appendChild(li);
+    });
+  }
+  actualizarListaEmpleados();
+
+  document.getElementById('form-empleado').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById('nombre').value.trim();
+    const ci = document.getElementById('ci').value.trim();
+    const cargo = document.getElementById('cargo').value.trim();
+    const area = document.getElementById('area').value.trim();
+    const sueldo = parseFloat(document.getElementById('sueldo').value);
+
+    if (empleados.some(x => x.ci === ci)) {
+      alert('Ya existe un empleado con ese CI.');
+      return;
+    }
+    empleados.push({ nombre, ci, cargo, area, sueldo });
+    guardar();
+    actualizarListaEmpleados();
+    e.target.reset();
+  });
+
+  /* ===== Cargos ===== */
+  const ulCargos = document.getElementById('lista-cargos');
+  function actualizarListaCargos() {
+    ulCargos.innerHTML = '';
+    cargos.forEach((c, i) => {
+      const li = document.createElement('li');
+      li.textContent = `${i+1}. ${c.nombre} - Área: ${c.area}`;
+      ulCargos.appendChild(li);
+    });
+  }
+  actualizarListaCargos();
+
+  document.getElementById('form-cargo').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nombreCargo = document.getElementById('nombreCargo').value.trim();
+    const areaCargo = document.getElementById('areaCargo').value.trim();
+    cargos.push({ nombre: nombreCargo, area: areaCargo });
+    guardar();
+    actualizarListaCargos();
+    e.target.reset();
+  });
+
+  /* ===== Bonos y Descuentos ===== */
+  const ulBD = document.getElementById('lista-bonos-descuentos');
+
+  function actualizarListaBonosDescuentos() {
+    ulBD.innerHTML = '';
+    if (bonosDescuentos.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No hay registros.';
+      ulBD.appendChild(li);
+      return;
+    }
+    bonosDescuentos.forEach((bd, i) => {
+      const li = document.createElement('li');
+      li.textContent = `${i+1}. [${bd.tipo.toUpperCase()}] CI: ${bd.ciEmpleado} - Bs ${money(bd.monto)}`;
+      ulBD.appendChild(li);
+    });
+  }
+
+  document.getElementById('form-bono-descuento').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tipo = document.getElementById('tipoBD').value;
+    const ciEmpleado = document.getElementById('empleadoBD').value.trim();
+    const monto = parseFloat(document.getElementById('montoBD').value);
+
+    const empleado = empleados.find(emp => emp.ci === ciEmpleado);
+    if (!empleado) { alert('No se encontró empleado con ese CI'); return; }
+
+    bonosDescuentos.push({ tipo, ciEmpleado, monto });
+    guardar();
+    actualizarListaBonosDescuentos();
+    e.target.reset();
+  });
+
+  /* ===== Planilla ===== */
+  function calcularBonosParaCI(ci) {
+    return bonosDescuentos.filter(bd => bd.tipo === 'bono' && bd.ciEmpleado === ci)
+                          .reduce((s, bd) => s + Number(bd.monto||0), 0);
+  }
+  function calcularDescuentosParaCI(ci) {
+    return bonosDescuentos.filter(bd => bd.tipo === 'descuento' && bd.ciEmpleado === ci)
+                          .reduce((s, bd) => s + Number(bd.monto||0), 0);
+  }
+
+  function cargarPlanilla() {
+    const tbody = document.querySelector('#tabla-planilla tbody');
+    tbody.innerHTML = '';
+    empleados.forEach((emp, index) => {
+      const bonos = calcularBonosParaCI(emp.ci);
+      const descuentos = calcularDescuentosParaCI(emp.ci);
+      const sueldoNeto = Number(emp.sueldo) + bonos - descuentos;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${emp.nombre}</td>
+        <td>${emp.ci}</td>
+        <td>${emp.cargo}</td>
+        <td>${emp.area}</td>
+        <td>${money(emp.sueldo)}</td>
+        <td>${money(descuentos)}</td>
+        <td>${money(bonos)}</td>
+        <td><strong>${money(sueldoNeto)}</strong></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ===== Reporte Sueldos ===== */
+  function generarReporteSueldos() {
+    const contenedor = document.getElementById('contenido-reporte');
+    if (empleados.length === 0) { contenedor.innerHTML = '<p>No hay empleados registrados.</p>'; return; }
+
+    let tabla = `<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background-color:#007acc; color:white;">
+          <th>#</th><th>Nombre</th><th>CI</th><th>Cargo</th><th>Área</th>
+          <th>Sueldo Básico (Bs)</th><th>Bonos (Bs)</th><th>Descuentos (Bs)</th><th>Sueldo Neto (Bs)</th>
+        </tr>
+      </thead><tbody>`;
+
+    empleados.forEach((emp, index) => {
+      const bonos = calcularBonosParaCI(emp.ci);
+      const descuentos = calcularDescuentosParaCI(emp.ci);
+      const sueldoNeto = Number(emp.sueldo) + bonos - descuentos;
+
+      tabla += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${emp.nombre}</td>
+          <td>${emp.ci}</td>
+          <td>${emp.cargo}</td>
+          <td>${emp.area}</td>
+          <td>Bs ${money(emp.sueldo)}</td>
+          <td>Bs ${money(bonos)}</td>
+          <td>Bs ${money(descuentos)}</td>
+          <td><strong>Bs ${money(sueldoNeto)}</strong></td>
+        </tr>`;
+    });
+
+    tabla += `</tbody></table>`;
+    contenedor.innerHTML = tabla;
+  }
+
+  document.getElementById('btnExportarPDF').addEventListener('click', () => {
+    const elemento = document.getElementById('contenido-reporte');
+    const opciones = {
+      margin: 0.5, filename: 'reporte_sueldos_planillasoft.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(opciones).from(elemento).save();
+  });
+
+  /* ===== Archivo: Import/Export JSON/Excel ===== */
+  document.getElementById('btnExportarJSON').addEventListener('click', () => {
+    const datos = { empleados, cargos, bonosDescuentos };
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'planilla_datos.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importarJSON').addEventListener('change', (e) => {
+    const archivo = e.target.files[0]; if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = (evt) => {
+      try {
+        const datos = JSON.parse(evt.target.result);
+        if (Array.isArray(datos.empleados)) { empleados.length = 0; empleados.push(...datos.empleados); }
+        if (Array.isArray(datos.cargos)) { cargos.length = 0; cargos.push(...datos.cargos); }
+        if (Array.isArray(datos.bonosDescuentos)) { bonosDescuentos.length = 0; bonosDescuentos.push(...datos.bonosDescuentos); }
+        guardar(); actualizarListaEmpleados(); actualizarListaCargos(); actualizarListaBonosDescuentos();
+        alert('✅ Datos importados correctamente.');
+      } catch {
+        alert('❌ JSON inválido.');
+      }
+    };
+    lector.readAsText(archivo);
+  });
+
+  document.getElementById('btnExportarExcel').addEventListener('click', () => {
+    const wb = XLSX.utils.book_new();
+    const wsEmpleados = XLSX.utils.json_to_sheet(empleados);
+    const wsCargos = XLSX.utils.json_to_sheet(cargos);
+    const wsBD = XLSX.utils.json_to_sheet(bonosDescuentos);
+    XLSX.utils.book_append_sheet(wb, wsEmpleados, "Empleados");
+    XLSX.utils.book_append_sheet(wb, wsCargos, "Cargos");
+    XLSX.utils.book_append_sheet(wb, wsBD, "BonosDescuentos");
+    XLSX.writeFile(wb, "planilla_datos.xlsx");
+  });
+
+  document.getElementById('importarExcel').addEventListener('change', (e) => {
+    const archivo = e.target.files[0]; if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = (evento) => {
+      const data = new Uint8Array(evento.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      if (wb.Sheets["Empleados"]) { const arr = XLSX.utils.sheet_to_json(wb.Sheets["Empleados"]); empleados.length = 0; empleados.push(...arr); }
+      if (wb.Sheets["Cargos"]) { const arr = XLSX.utils.sheet_to_json(wb.Sheets["Cargos"]); cargos.length = 0; cargos.push(...arr); }
+      if (wb.Sheets["BonosDescuentos"]) { const arr = XLSX.utils.sheet_to_json(wb.Sheets["BonosDescuentos"]); bonosDescuentos.length = 0; bonosDescuentos.push(...arr); }
+      guardar(); actualizarListaEmpleados(); actualizarListaCargos(); actualizarListaBonosDescuentos();
+      alert("✅ Datos importados desde Excel correctamente.");
+    };
+    lector.readAsArrayBuffer(archivo);
+  });
+});
+</script>
+</body>
+</html>

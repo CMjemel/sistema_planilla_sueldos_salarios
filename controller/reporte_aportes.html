@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reporte de Aportes - Ventana Flotante</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      padding: 20px;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+
+    /* Botón para abrir ventana */
+    #abrirReporte {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    #abrirReporte:hover {
+      background-color: #2980b9;
+    }
+
+    /* Fondo oscuro para ventana flotante */
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Ventana flotante */
+    #ventanaFlotante {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 750px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      position: relative;
+      padding: 20px 30px 30px 30px;
+    }
+
+    /* Botón cerrar */
+    #cerrar {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      user-select: none;
+    }
+    #cerrar:hover {
+      color: #e74c3c;
+    }
+
+    /* Tabla */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tr:hover {
+      background-color: #f1f9ff;
+    }
+
+    /* Botón descargar */
+    #btn-descargar {
+      margin-top: 20px;
+      padding: 10px 18px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+      float: right;
+    }
+    #btn-descargar:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Sistema de Gestión</h1>
+  <button id="abrirReporte">Ver Reporte de Aportes</button>
+
+  <div id="overlay">
+    <div id="ventanaFlotante">
+      <span id="cerrar">&times;</span>
+      <h2>Reporte de Aportes</h2>
+      <table id="tabla-aportes">
+        <thead>
+          <tr>
+            <th>Empleado</th>
+            <th>Sueldo Básico (Bs.)</th>
+            <th>AFP (10%)</th>
+            <th>Caja Salud (7%)</th>
+            <th>Total Aportes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="btn-descargar">Descargar Reporte PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const empleados = [
+      { id: 1, nombre: "Juan Pérez", sueldoBasico: 3500 },
+      { id: 2, nombre: "María Gómez", sueldoBasico: 4200 },
+      { id: 3, nombre: "Luis Torres", sueldoBasico: 2800 }
+    ];
+
+    const overlay = document.getElementById('overlay');
+    const abrirBtn = document.getElementById('abrirReporte');
+    const cerrarBtn = document.getElementById('cerrar');
+    const tbody = document.querySelector('#tabla-aportes tbody');
+
+    function calcularAportes() {
+      tbody.innerHTML = '';
+      empleados.forEach(emp => {
+        const afp = emp.sueldoBasico * 0.10;
+        const caja = emp.sueldoBasico * 0.07;
+        const total = afp + caja;
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${emp.nombre}</td>
+          <td>${emp.sueldoBasico.toFixed(2)}</td>
+          <td>${afp.toFixed(2)}</td>
+          <td>${caja.toFixed(2)}</td>
+          <td>${total.toFixed(2)}</td>
+        `;
+        tbody.appendChild(fila);
+      });
+    }
+
+    abrirBtn.addEventListener('click', () => {
+      calcularAportes();
+      overlay.style.display = 'flex';
+    });
+
+    cerrarBtn.addEventListener('click', () => {
+      overlay.style.display = 'none';
+    });
+
+    // Cerrar al hacer click fuera de la ventana
+    overlay.addEventListener('click', (e) => {
+      if(e.target === overlay){
+        overlay.style.display = 'none';
+      }
+    });
+
+    // Descargar PDF
+    document.getElementById('btn-descargar').addEventListener('click', () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text('Reporte de Aportes', 105, 15, null, null, 'center');
+
+      let y = 30;
+      doc.setFontSize(12);
+      doc.text('Empleado', 20, y);
+      doc.text('Sueldo Básico (Bs.)', 70, y);
+      doc.text('AFP (10%)', 120, y);
+      doc.text('Caja Salud (7%)', 155, y);
+      doc.text('Total Aportes', 190, y, null, null, 'right');
+
+      y += 8;
+      doc.setLineWidth(0.5);
+      doc.line(20, y, 195, y);
+      y += 8;
+
+      empleados.forEach(emp => {
+        const afp = emp.sueldoBasico * 0.10;
+        const caja = emp.sueldoBasico * 0.07;
+        const total = afp + caja;
+
+        doc.text(emp.nombre, 20, y);
+        doc.text(emp.sueldoBasico.toFixed(2), 80, y, null, null, 'right');
+        doc.text(afp.toFixed(2), 130, y, null, null, 'right');
+        doc.text(caja.toFixed(2), 170, y, null, null, 'right');
+        doc.text(total.toFixed(2), 195, y, null, null, 'right');
+        y += 10;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      doc.save('Reporte_Aportes.pdf');
+    });
+  </script>
+
+</body>
+</html>
+

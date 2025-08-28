@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bienvenido - PlanillaSoft SRL</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 50px 35px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3);
+      max-width: 420px;
+      width: 90%;
+      margin: auto;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #ffffff;
+      text-align: center;
+      border: 1px solid rgba(0, 123, 255, 0.3);
+    }
+
+    .bienvenida {
+      font-size: 20px;
+      font-weight: 600;
+      color: #00c6ff;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid #00c6ff;
+      width: 0;
+      animation: typing 3s steps(40, end) forwards, blink 0.7s step-end infinite;
+    }
+
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent }
+    }
+
+    .login-container h2 {
+      margin: 20px 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #00aaff;
+      text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+    }
+
+    .input-group {
+      position: relative;
+      margin-top: 15px;
+    }
+
+    .input-group i {
+      position: absolute;
+      top: 50%;
+      left: 15px;
+      transform: translateY(-50%);
+      color: #00aaff;
+    }
+
+    .input-group input {
+      padding: 12px 15px 12px 45px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      outline: none;
+      transition: box-shadow 0.3s;
+    }
+
+    .input-group input:focus {
+      box-shadow: 0 0 10px rgba(0, 170, 255, 0.6);
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    form button {
+      margin-top: 25px;
+      padding: 12px;
+      background: linear-gradient(135deg, #007bff, #00c6ff);
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0, 204, 255, 0.4);
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+
+    form button:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 20px rgba(0, 204, 255, 0.6);
+    }
+
+    a {
+      margin-top: 20px;
+      display: inline-block;
+      font-size: 14px;
+      color: #00c6ff;
+      text-decoration: none;
+      opacity: 0.9;
+      transition: opacity 0.3s, color 0.3s;
+    }
+
+    a:hover {
+      color: #ffffff;
+      opacity: 1;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="atom"></canvas>
+
+  <div class="login-container">
+    <div class="bienvenida">Bienvenido a PlanillaSoft SRL</div>
+    <h2>Iniciar Sesión</h2>
+    <form action="principal.html" method="get">
+      <div class="input-group">
+        <i class="fas fa-user"></i>
+        <input type="text" id="usuario" name="usuario" placeholder="Usuario" required />
+      </div>
+
+      <div class="input-group">
+        <i class="fas fa-id-card"></i>
+        <input type="text" id="ci" name="ci" placeholder="Carnet de Identidad" required />
+      </div>
+
+      <div class="input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="password" name="password" placeholder="Contraseña" required />
+      </div>
+
+      <button type="submit">Ingresar</button>
+      <a href="#">¿Olvidaste tu contraseña?</a>
+    </form>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('atom');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const num = 100;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < num; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        radius: Math.random() * 1.5 + 1
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00aaff';
+      ctx.strokeStyle = 'rgba(0,170,255,0.1)';
+
+      for (let i = 0; i < num; i++) {
+        let p = particles[i];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < num; j++) {
+          let q = particles[j];
+          let dx = p.x - q.x;
+          let dy = p.y - q.y;
+          let dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.stroke();
+          }
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
+
+
+
